@@ -46,11 +46,14 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Extract first image tag
+        run: echo "TRIVY_IMAGE=$(echo '${{ steps.meta.outputs.tags }}' | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.meta.outputs.tags }}
+          image-ref: ${{ env.TRIVY_IMAGE }}
           format: table
           exit-code: 1 # 1로 설정하면 취약점이 있을 시 실패 처리됨
           ignore-unfixed: true
