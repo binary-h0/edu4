@@ -12,7 +12,7 @@ on:
 jobs:
   push_to_registries:
     name: Push Docker image to multiple registries
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       packages: write
       contents: read
@@ -33,7 +33,24 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: ${{ github.event.inputs.name }} 
       
-      - name: Build and push Docker images
+      - name: Build Docker images
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: table
+          exit-code: 1 # 1로 설정하면 취약점이 있을 시 실패 처리됨
+          ignore-unfixed: true
+          vuln-type: os,library
+  
+      - name: Push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
